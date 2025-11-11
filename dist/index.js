@@ -9,7 +9,7 @@ const port = 3000;
 app.use(express_1.default.json());
 const videos = [{ id: 1, title: 'Rembo', year: 1990 }, { id: 2, title: 'Matrica', year: 1995 }];
 app.get('/', (req, res) => {
-    let helloMessage = 'Hello wolrd$!!';
+    let helloMessage = 'Hello wolrd$!!!!!';
     res.send(helloMessage);
 });
 app.get('/videos', (req, res) => {
