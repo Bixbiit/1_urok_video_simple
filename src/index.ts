@@ -18,6 +18,11 @@ let videos = [
   { id: 4, title: "Video 4" }
 ]
 
+app.delete('/testing/all-data', (req: Request, res: Response) => {
+    videos = []
+    res.sendStatus(204)
+})
+
 app.get('/', (req: Request, res: Response) => {
     res.send('Hello!!!!!5')
 })
