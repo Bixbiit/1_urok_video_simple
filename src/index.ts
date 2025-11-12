@@ -13,12 +13,12 @@ const port = process.env.PORT || 5000;
 
 let videos = [
   { id: 1, title: "Video 1" },
-  { id: 2, title: "Video 2" }, // запятая здесь не обязательна для последнего элемента
+  { id: 2, title: "Video 2" }, 
   { id: 3, title: "Video 3" },
   { id: 4, title: "Video 4" }
 ]
 
-app.delete('/testing/all-data', (req: Request, res: Response) => {
+app.delete('/testing/all-data', (req: Request, res: Response) => { // работает
     videos = []
     res.sendStatus(204)
 })
@@ -48,13 +48,14 @@ app.put('/videos/:videoId', (req: Request, res: Response) => {
     if(video) {
         video.title = req.body.title;
         res.send(video)
+        res.sendStatus(200)
     } else {
-        res.send(404)
+        res.sendStatus(404)
     }
 })
 
-app.get('/videos/:videoId', (req: Request, res: Response) => {
-    const id = +req.params.videoId;
+app.get('/videos/:id', (req: Request, res: Response) => {
+    const id = +req.params.id;
     const video = videos.find(v => v.id === id);
     if(video) {
         video.title = req.body.title;
