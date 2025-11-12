@@ -1,76 +1,85 @@
 import express, { Request, Response } from 'express';
-import bodyParser from 'body-parser'
-import cors from 'cors'
 
 const app = express();
+const port = 3000;
 
-const corsMiddleware = cors();
-app.use(corsMiddleware)
-const jsonBodyMiddleware = bodyParser.json();
-app.use(jsonBodyMiddleware);
+app.use(express.json()); // Для разбора JSON тела
 
-const port = process.env.PORT || 5000;
+// Изначально видео: пустой массив
+let videos: any[] = [];
 
-let videos = [
-  { id: 1, title: "Video 1" },
-  { id: 2, title: "Video 2" }, // запятая здесь не обязательна для последнего элемента
-  { id: 3, title: "Video 3" },
-  { id: 4, title: "Video 4" }
-]
+// Дополнительный маршрут для очистки всех данных (по условию тестов)
+app.delete('/testing/all-data', (req: Request, res: Response) => {
+    videos = [];
+    res.sendStatus(204);
+});
 
-app.get('/', (req: Request, res: Response) => {
-    res.send('Hello!!!!!5')
-})
-
+// Получение всех видео
 app.get('/videos', (req: Request, res: Response) => {
-    res.send(videos)
-})
+    res.status(200).json(videos);
+});
 
+// Создание нового видео
 app.post('/videos', (req: Request, res: Response) => {
-    const newVideo = {
-        id: +(new Date()),
-        title: req.body.title,
-        author: 'nikitka'
+    const newVideo = req.body;
+
+    // Пример валидации (добавьте по необходимости)
+    if (!newVideo.title || !newVideo.author || !Array.isArray(newVideo.availableResolutions)) {
+        return res.status(400).json({ errorsMessages: [] /* сюда добавьте сообщение */ });
     }
-    videos.push(newVideo)
 
-    res.status(202).send(newVideo)
-})
+    const id = Date.now(); // простое уникальное id
+    const createdVideo = { ...newVideo, id, createdAt: new Date().toISOString() };
+    videos.push(createdVideo);
+    res.status(201).json(createdVideo);
+});
 
-app.put('/videos/:videoId', (req: Request, res: Response) => {
-    const id = +req.params.videoId;
+// Получить видео по id
+app.get('/videos/:id', (req: Request, res: Response) => {
+    const id = +req.params.id;
     const video = videos.find(v => v.id === id);
-    if(video) {
-        video.title = req.body.title;
-        res.send(video)
+    if (video) {
+        res.json(video);
     } else {
-        res.send(404)
+        res.sendStatus(404);
     }
-})
+});
 
-app.get('/videos/:videoId', (req: Request, res: Response) => {
-    const id = +req.params.videoId;
-    const video = videos.find(v => v.id === id);
-    if(video) {
-        video.title = req.body.title;
-        res.send(video)
-    } else {
-        res.send(404)
+// Обновление видео по id (например, PUT или PATCH)
+app.put('/videos/:id', (req: Request, res: Response) => {
+    const id = +req.params.id;
+    const index = videos.findIndex(v => v.id === id);
+    if (index === -1) {
+        return res.sendStatus(404);
     }
-})
+    const body = req.body;
+    // Валидация тела
+    if (!body.title || !body.author || !Array.isArray(body.availableResolutions)) {
+        return res.status(400).json({ errorsMessages: [] });
+    }
+    // Обновление объекта
+    videos[index] = { ...videos[index], ...body };
+    res.sendStatus(204);
+});
 
+// Удаление видео по id
 app.delete('/videos/:id', (req: Request, res: Response) => {
     const id = +req.params.id;
-    const newVideos = videos.filter(v => v.id !== id )
-    if ( newVideos.length < videos.length) {
-        videos = newVideos
-        res.send(204)
+    const lengthBefore = videos.length;
+    videos = videos.filter(v => v.id !== id);
+    if (videos.length < lengthBefore) {
+        res.sendStatus(204);
     } else {
-        res.send(404)
+        res.sendStatus(404);
     }
-})
+});
+
+// Обработка ошибок для ненайденных путей
+app.use((req, res) => {
+    res.status(404).send('<html><body><pre>Cannot ' + req.method + ' ' + req.originalUrl + '</pre></body></html>');
+});
 
 app.listen(port, () => {
-    console.log(`Сервер запущен на порте ${port}`)
-})
+    console.log(`Сервер запущен на порте ${port}`);
+});
 
