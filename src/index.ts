@@ -22,7 +22,7 @@ app.get('/videos', (req: Request, res: Response) => {
 
 /* --- Создать новое видео --- */
 app.post('/videos', (req: Request, res: Response) => {
-    const { title, author, availableResolutions } = req.body;
+    const { title, author, availableResolutions, publicationDate } = req.body;
 
     // Валидация
     const errors: any[] = [];
@@ -36,10 +36,16 @@ app.post('/videos', (req: Request, res: Response) => {
     if (!Array.isArray(availableResolutions)) {
         errors.push({ message: "Available resolutions must be an array", field: "availableResolutions" });
     }
+    if (publicationDate !== undefined && typeof publicationDate !== 'string') {
+        errors.push({ message: "publicationDate must be a string", field: "publicationDate" });
+    }
 
     if (errors.length > 0) {
         return res.status(400).json({ errorsMessages: errors });
     }
+
+    // Установка publicationDate
+    const pubDate = publicationDate !== undefined ? publicationDate : new Date().toISOString();
 
     const newVideo = {
         id: currentId++,
@@ -48,7 +54,7 @@ app.post('/videos', (req: Request, res: Response) => {
         availableResolutions,
         canBeDownloaded: false,
         minAgeRestriction: null,
-        publicationDate: new Date().toISOString(),
+        publicationDate: pubDate,
         createdAt: new Date().toISOString()
     };
 
@@ -127,11 +133,12 @@ app.put('/videos/:id', (req: Request, res: Response) => {
         video.minAgeRestriction = minAgeRestriction;
     }
     if (publicationDate !== undefined && typeof publicationDate === 'string') {
-        video.publicationDate = publicationDate;
+        // Не меняем publicationDate, чтобы она оставалась постоянной или обновляем по необходимости
+        // В данном случае предполагается, что при обновлении она не меняется, если не передан новый
+        // Поэтому исключаем обновление
+        // или, если хотите разрешить обновление, раскомментируйте строку ниже:
+        // video.publicationDate = publicationDate;
     }
-
-    // Обновляем дату публикации
-    video.publicationDate = new Date().toISOString();
 
     res.sendStatus(204);
 });
