@@ -1,79 +1,76 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
+import bodyParser from 'body-parser'
+import cors from 'cors'
 
 const app = express();
-app.use(express.json());
 
-const port = 3000;
+const corsMiddleware = cors();
+app.use(corsMiddleware)
+const jsonBodyMiddleware = bodyParser.json();
+app.use(jsonBodyMiddleware);
 
-// Изначально массив видео (можете начать с пустого массива)
-let videos: Array<{ id: number; title: string; description: string; createdAt: string }> = [];
+const port = process.env.PORT || 5000;
 
-// Удалить все данные (для тестового эндпоинта)
-app.delete('/testing/all-data', (req, res) => {
-    videos = [];
-    res.sendStatus(204);
-});
+let videos = [
+  { id: 1, title: "Video 1" },
+  { id: 2, title: "Video 2" }, // запятая здесь не обязательна для последнего элемента
+  { id: 3, title: "Video 3" },
+  { id: 4, title: "Video 4" }
+]
 
-// Получить все видео
-app.get('/videos', (req, res) => {
-    res.json(videos);
-});
+app.get('/', (req: Request, res: Response) => {
+    res.send('Hello!!!!!5')
+})
 
-// Получить видео по id
-app.get('/videos/:id', (req, res) => {
-    const id = +req.params.id;
+app.get('/videos', (req: Request, res: Response) => {
+    res.send(videos)
+})
+
+app.post('/videos', (req: Request, res: Response) => {
+    const newVideo = {
+        id: +(new Date()),
+        title: req.body.title,
+        author: 'nikitka'
+    }
+    videos.push(newVideo)
+
+    res.status(202).send(newVideo)
+})
+
+app.put('/videos/:videoId', (req: Request, res: Response) => {
+    const id = +req.params.videoId;
     const video = videos.find(v => v.id === id);
-    if (video) {
-        res.json(video);
+    if(video) {
+        video.title = req.body.title;
+        res.send(video)
     } else {
-        res.sendStatus(404);
+        res.send(404)
     }
-});
+})
 
-// Создать новое видео
-app.post('/videos', (req, res) => {
-    const newVideo = req.body;
-    // Можно добавить валидацию, чтобы убедиться, что body содержит нужные поля
-    // Для примера просто добавим id и дату
-    const id = Date.now(); // или другой способ генерации уникального id
-    const video = {
-        id: id,
-        ...newVideo,
-        createdAt: new Date().toISOString()
-    };
-    videos.push(video);
-    res.status(201).json(video);
-});
-
-// Обновить видео по id
-app.put('/videos/:id', (req, res) => {
-    const id = +req.params.id;
-    const index = videos.findIndex(v => v.id === id);
-    if (index === -1) {
-        res.sendStatus(404);
-        return;
-    }
-
-    // Обновляем существующий объект
-    const updatedVideo = req.body;
-    // Можно добавить валидацию
-    videos[index] = { ...videos[index], ...updatedVideo };
-    res.sendStatus(204);
-});
-
-// Удалить видео по id
-app.delete('/videos/:id', (req, res) => {
-    const id = +req.params.id;
-    const initialLength = videos.length;
-    videos = videos.filter(v => v.id !== id);
-    if (videos.length < initialLength) {
-        res.sendStatus(204);
+app.get('/videos/:videoId', (req: Request, res: Response) => {
+    const id = +req.params.videoId;
+    const video = videos.find(v => v.id === id);
+    if(video) {
+        video.title = req.body.title;
+        res.send(video)
     } else {
-        res.sendStatus(404);
+        res.send(404)
     }
-});
+})
 
-// Запуск сервера
+app.delete('/videos/:id', (req: Request, res: Response) => {
+    const id = +req.params.id;
+    const newVideos = videos.filter(v => v.id !== id )
+    if ( newVideos.length < videos.length) {
+        videos = newVideos
+        res.send(204)
+    } else {
+        res.send(404)
+    }
+})
+
 app.listen(port, () => {
-    console.log(`Сервер запущен на порте ${port}`);
-});
+    console.log(`Сервер запущен на порте ${port}`)
+})
+
