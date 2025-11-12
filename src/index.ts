@@ -1,75 +1,130 @@
 import express, { Request, Response } from 'express';
-import bodyParser from 'body-parser'
-import cors from 'cors'
 
 const app = express();
+app.use(express.json());
 
-const corsMiddleware = cors();
-app.use(corsMiddleware)
-const jsonBodyMiddleware = bodyParser.json();
-app.use(jsonBodyMiddleware);
+const port = 3000;
 
-const port = process.env.PORT || 5000;
+// Временное хранилище видео
+let videos: any[] = [];
+let currentId = 1;
 
-let videos = [
-  { id: 1, title: "Video 1" },
-  { id: 2, title: "Video 2" }, // запятая здесь не обязательна для последнего элемента
-  { id: 3, title: "Video 3" },
-  { id: 4, title: "Video 4" }
-]
+// Эндпоинты для тестирования очистки данных
+app.delete('/testing/all-data', (req: Request, res: Response) => {
+    videos = [];
+    currentId = 1;
+    res.sendStatus(204); // No Content
+});
 
-app.get('/', (req: Request, res: Response) => {
-    res.send('Hello!!!!!5')
-})
-
+// Получение всех видео
 app.get('/videos', (req: Request, res: Response) => {
-    res.send(videos)
-})
+    res.status(200).json(videos);
+});
 
+// Создание нового видео
 app.post('/videos', (req: Request, res: Response) => {
+    const { title, author, availableResolutions } = req.body;
+
+    // Валидация тела запроса, например, что title существует и не null
+    if (typeof title !== 'string' || title.trim() === '') {
+        return res.status(400).json({ errorsMessages: [{ message: "Title is required", field: "title" }] });
+    }
+    if (typeof author !== 'string' || author.trim() === '') {
+        return res.status(400).json({ errorsMessages: [{ message: "Author is required", field: "author" }] });
+    }
+    if (!Array.isArray(availableResolutions)) {
+        return res.status(400).json({ errorsMessages: [{ message: "Available resolutions must be an array", field: "availableResolutions" }] });
+    }
+
     const newVideo = {
-        id: +(new Date()),
-        title: req.body.title,
-        author: 'nikitka'
-    }
-    videos.push(newVideo)
+        id: currentId++,
+        title,
+        author,
+        availableResolutions,
+        canBeDownloaded: false,
+        minAgeRestriction: null,
+        publicationDate: new Date().toISOString()
+    };
+    videos.push(newVideo);
+    res.status(201).json(newVideo);
+});
 
-    res.status(202).send(newVideo)
-})
-
-app.put('/videos/:videoId', (req: Request, res: Response) => {
-    const id = +req.params.videoId;
+// Получить видео по id
+app.get('/videos/:id', (req: Request, res: Response) => {
+    const id = +req.params.id;
     const video = videos.find(v => v.id === id);
-    if(video) {
-        video.title = req.body.title;
-        res.send(video)
+    if (video) {
+        res.status(200).json(video);
     } else {
-        res.send(404)
+        res.sendStatus(404);
     }
-})
+});
 
-app.get('/videos/:videoId', (req: Request, res: Response) => {
-    const id = +req.params.videoId;
+// Обновление видео по id
+app.put('/videos/:id', (req: Request, res: Response) => {
+    const id = +req.params.id;
     const video = videos.find(v => v.id === id);
-    if(video) {
-        video.title = req.body.title;
-        res.send(video)
-    } else {
-        res.send(404)
+    if (!video) {
+        return res.sendStatus(404);
     }
-})
 
+    const {
+        title,
+        author,
+        availableResolutions,
+        canBeDownloaded,
+        minAgeRestriction,
+        publicationDate
+    } = req.body;
+
+    const errors: any[] = [];
+
+    if (typeof title !== 'string') {
+        errors.push({ message: "Title must be a string", field: "title" });
+    }
+    if (typeof canBeDownloaded !== 'boolean') {
+        errors.push({ message: "canBeDownloaded must be a boolean", field: "canBeDownloaded" });
+    }
+    if (typeof publicationDate !== 'string') {
+        errors.push({ message: "publicationDate must be a string", field: "publicationDate" });
+    }
+    // Дополнительные проверки, например, что минимальные/максимальные значения и т. д.
+
+    if (errors.length > 0) {
+        return res.status(400).json({ errorsMessages: errors });
+    }
+
+    // Обновление данных
+    if (title !== undefined) video.title = title;
+    if (author !== undefined) video.author = author;
+    if (availableResolutions !== undefined) video.availableResolutions = availableResolutions;
+    if (canBeDownloaded !== undefined) video.canBeDownloaded = canBeDownloaded;
+    if (minAgeRestriction !== undefined) video.minAgeRestriction = minAgeRestriction;
+    if (publicationDate !== undefined) video.publicationDate = publicationDate;
+
+    res.sendStatus(204);
+});
+
+// Удаление видео по id
 app.delete('/videos/:id', (req: Request, res: Response) => {
     const id = +req.params.id;
-    const newVideos = videos.filter(v => v.id !== id )
-    if ( newVideos.length < videos.length) {
-        videos = newVideos
-        res.send(204)
+    const index = videos.findIndex(v => v.id === id);
+    if (index !== -1) {
+        videos.splice(index, 1);
+        res.sendStatus(204);
     } else {
-        res.send(404)
+        res.sendStatus(404);
     }
-})
+});
 
+// Обработка маршрута /testing/all-data (для тестов)
+app.delete('/testing/all-data', (req: Request, res: Response) => {
+    videos = [];
+    currentId = 1;
+    res.sendStatus(204);
+});
+
+// Запуск сервера
 app.listen(port, () => {
-    console.log(`Сервер запущен на порте ${port}`)
-})
+    console.log(`Сервер запущен на порте ${port}`);
+});
