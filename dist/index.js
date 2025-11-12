@@ -4,20 +4,51 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const body_parser_1 = __importDefault(require("body-parser"));
+const cors_1 = __importDefault(require("cors"));
 const app = (0, express_1.default)();
-const port = 3000;
-app.use(express_1.default.json());
-const videos = [{ id: 1, title: 'Rembo', year: 1990 }, { id: 2, title: 'Matrica', year: 1995 }];
+const corsMiddleware = (0, cors_1.default)();
+app.use(corsMiddleware);
+const jsonBodyMiddleware = body_parser_1.default.json();
+app.use(jsonBodyMiddleware);
+const port = process.env.PORT || 5000;
+let videos = [
+    { id: 1, title: "Video 1" },
+    { id: 2, title: "Video 2" }, // запятая здесь не обязательна для последнего элемента
+    { id: 3, title: "Video 3" },
+    { id: 4, title: "Video 4" }
+];
 app.get('/', (req, res) => {
-    let helloMessage = 'Hello wolrd$!!!!!';
-    res.send(helloMessage);
+    res.send('Hello!!!!!5');
 });
 app.get('/videos', (req, res) => {
     res.send(videos);
 });
-app.get('/videos/:id', (req, res) => {
-    let video = videos.find(v => v.id === +req.params.id);
+app.post('/videos', (req, res) => {
+    const newVideo = {
+        id: +(new Date()),
+        title: req.body.title,
+        author: 'nikitka'
+    };
+    videos.push(newVideo);
+    res.status(202).send(newVideo);
+});
+app.put('/videos/:videoId', (req, res) => {
+    const id = +req.params.videoId;
+    const video = videos.find(v => v.id === id);
     if (video) {
+        video.title = req.body.title;
+        res.send(video);
+    }
+    else {
+        res.send(404);
+    }
+});
+app.get('/videos/:videoId', (req, res) => {
+    const id = +req.params.videoId;
+    const video = videos.find(v => v.id === id);
+    if (video) {
+        video.title = req.body.title;
         res.send(video);
     }
     else {
@@ -25,30 +56,11 @@ app.get('/videos/:id', (req, res) => {
     }
 });
 app.delete('/videos/:id', (req, res) => {
-    for (let i = 0; i < videos.length; i++) {
-        if (videos[i].id === +req.params.id) {
-            videos.splice(i, 1);
-            res.send(204);
-            return;
-        }
-    }
-    res.send(404);
-});
-app.post('/videos', (req, res) => {
-    const newVideo = {
-        id: +(new Date()),
-        title: req.body.title,
-        year: req.body.year
-    };
-    videos.push(newVideo);
-    res.status(201).send(newVideo);
-});
-app.put('/videos/:id', (req, res) => {
-    let video = videos.find(v => v.id === +req.params.id);
-    if (video) {
-        video.title = req.body.title;
-        video.year = req.body.year;
-        res.send(video);
+    const id = +req.params.id;
+    const newVideos = videos.filter(v => v.id !== id);
+    if (newVideos.length < videos.length) {
+        videos = newVideos;
+        res.send(204);
     }
     else {
         res.send(404);

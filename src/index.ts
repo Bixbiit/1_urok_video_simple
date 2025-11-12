@@ -1,23 +1,58 @@
-import express, {Request, Response} from 'express';
+import express, { Request, Response } from 'express';
+import bodyParser from 'body-parser'
+import cors from 'cors'
+
 const app = express();
-const port = 3000;
 
-app.use(express.json())
+const corsMiddleware = cors();
+app.use(corsMiddleware)
+const jsonBodyMiddleware = bodyParser.json();
+app.use(jsonBodyMiddleware);
 
-const videos = [{id: 1, title: 'Rembo', year: 1990 }, {id: 2, title: 'Matrica', year: 1995 }]
+const port = process.env.PORT || 5000;
+
+let videos = [
+  { id: 1, title: "Video 1" },
+  { id: 2, title: "Video 2" }, // запятая здесь не обязательна для последнего элемента
+  { id: 3, title: "Video 3" },
+  { id: 4, title: "Video 4" }
+]
 
 app.get('/', (req: Request, res: Response) => {
-    let helloMessage = 'Hello wolrd$!!!!!'
-    res.send(helloMessage)
+    res.send('Hello!!!!!5')
 })
 
 app.get('/videos', (req: Request, res: Response) => {
     res.send(videos)
 })
 
-app.get('/videos/:id', (req: Request, res: Response) => {
-    let video = videos.find(v => v.id === +req.params.id)
+app.post('/videos', (req: Request, res: Response) => {
+    const newVideo = {
+        id: +(new Date()),
+        title: req.body.title,
+        author: 'nikitka'
+    }
+    videos.push(newVideo)
+
+    res.status(202).send(newVideo)
+})
+
+app.put('/videos/:videoId', (req: Request, res: Response) => {
+    const id = +req.params.videoId;
+    const video = videos.find(v => v.id === id);
     if(video) {
+        video.title = req.body.title;
+        res.send(video)
+    } else {
+        res.send(404)
+    }
+})
+
+app.get('/videos/:videoId', (req: Request, res: Response) => {
+    const id = +req.params.videoId;
+    const video = videos.find(v => v.id === id);
+    if(video) {
+        video.title = req.body.title;
         res.send(video)
     } else {
         res.send(404)
@@ -25,32 +60,11 @@ app.get('/videos/:id', (req: Request, res: Response) => {
 })
 
 app.delete('/videos/:id', (req: Request, res: Response) => {
-    for(let i = 0; i < videos.length; i++) {
-        if (videos[i].id === +req.params.id) {
-            videos.splice(i, 1)
-            res.send(204)
-            return
-        }
-    }
-    res.send(404)
-})
-
-app.post('/videos', (req: Request, res: Response) => {
-    const newVideo = {
-        id: +(new Date()),
-        title: req.body.title,
-        year: req.body.year
-    }
-    videos.push(newVideo)
-    res.status(201).send(newVideo)
-})
-
-app.put('/videos/:id', (req: Request, res: Response) => {
-    let video = videos.find(v => v.id === +req.params.id)
-    if(video) {
-        video.title = req.body.title
-        video.year = req.body.year
-        res.send(video)
+    const id = +req.params.id;
+    const newVideos = videos.filter(v => v.id !== id )
+    if ( newVideos.length < videos.length) {
+        videos = newVideos
+        res.send(204)
     } else {
         res.send(404)
     }
@@ -59,3 +73,4 @@ app.put('/videos/:id', (req: Request, res: Response) => {
 app.listen(port, () => {
     console.log(`Сервер запущен на порте ${port}`)
 })
+
