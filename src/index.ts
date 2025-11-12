@@ -1,39 +1,44 @@
 import express, { Request, Response } from 'express';
 
 const app = express();
+
 app.use(express.json());
 
-const port = 3000;
-
-// Временное хранилище видео
 let videos: any[] = [];
 let currentId = 1;
+const port = 3000;
 
-// Эндпоинты для тестирования очистки данных
+/* --- Очистка всех данных для тестов --- */
 app.delete('/testing/all-data', (req: Request, res: Response) => {
     videos = [];
     currentId = 1;
-    res.sendStatus(204); // No Content
+    res.sendStatus(204);
 });
 
-// Получение всех видео
+/* --- Получить все видео --- */
 app.get('/videos', (req: Request, res: Response) => {
     res.status(200).json(videos);
 });
 
-// Создание нового видео
+/* --- Создать новое видео --- */
 app.post('/videos', (req: Request, res: Response) => {
     const { title, author, availableResolutions } = req.body;
 
-    // Валидация тела запроса, например, что title существует и не null
-    if (typeof title !== 'string' || title.trim() === '') {
-        return res.status(400).json({ errorsMessages: [{ message: "Title is required", field: "title" }] });
+    // Валидация
+    const errors: any[] = [];
+
+    if (typeof title !== 'string' || !title.trim()) {
+        errors.push({ message: "Title is required", field: "title" });
     }
-    if (typeof author !== 'string' || author.trim() === '') {
-        return res.status(400).json({ errorsMessages: [{ message: "Author is required", field: "author" }] });
+    if (typeof author !== 'string' || !author.trim()) {
+        errors.push({ message: "Author is required", field: "author" });
     }
     if (!Array.isArray(availableResolutions)) {
-        return res.status(400).json({ errorsMessages: [{ message: "Available resolutions must be an array", field: "availableResolutions" }] });
+        errors.push({ message: "Available resolutions must be an array", field: "availableResolutions" });
+    }
+
+    if (errors.length > 0) {
+        return res.status(400).json({ errorsMessages: errors });
     }
 
     const newVideo = {
@@ -43,13 +48,15 @@ app.post('/videos', (req: Request, res: Response) => {
         availableResolutions,
         canBeDownloaded: false,
         minAgeRestriction: null,
-        publicationDate: new Date().toISOString()
+        publicationDate: new Date().toISOString(),
+        createdAt: new Date().toISOString()
     };
+
     videos.push(newVideo);
     res.status(201).json(newVideo);
 });
 
-// Получить видео по id
+/* --- Получить видео по id --- */
 app.get('/videos/:id', (req: Request, res: Response) => {
     const id = +req.params.id;
     const video = videos.find(v => v.id === id);
@@ -60,7 +67,7 @@ app.get('/videos/:id', (req: Request, res: Response) => {
     }
 });
 
-// Обновление видео по id
+/* --- Обновить видео по id --- */
 app.put('/videos/:id', (req: Request, res: Response) => {
     const id = +req.params.id;
     const video = videos.find(v => v.id === id);
@@ -77,35 +84,59 @@ app.put('/videos/:id', (req: Request, res: Response) => {
         publicationDate
     } = req.body;
 
+    // Валидация
     const errors: any[] = [];
 
-    if (typeof title !== 'string') {
+    if (title !== undefined && typeof title !== 'string') {
         errors.push({ message: "Title must be a string", field: "title" });
     }
-    if (typeof canBeDownloaded !== 'boolean') {
+    if (author !== undefined && typeof author !== 'string') {
+        errors.push({ message: "Author must be a string", field: "author" });
+    }
+    if (availableResolutions !== undefined && !Array.isArray(availableResolutions)) {
+        errors.push({ message: "Available resolutions must be an array", field: "availableResolutions" });
+    }
+    if (canBeDownloaded !== undefined && typeof canBeDownloaded !== 'boolean') {
         errors.push({ message: "canBeDownloaded must be a boolean", field: "canBeDownloaded" });
     }
-    if (typeof publicationDate !== 'string') {
+    if (minAgeRestriction !== undefined && (typeof minAgeRestriction !== 'number' || minAgeRestriction < 1 || minAgeRestriction > 18)) {
+        errors.push({ message: "minAgeRestriction must be a number between 1 and 18", field: "minAgeRestriction" });
+    }
+    if (publicationDate !== undefined && typeof publicationDate !== 'string') {
         errors.push({ message: "publicationDate must be a string", field: "publicationDate" });
     }
-    // Дополнительные проверки, например, что минимальные/максимальные значения и т. д.
 
     if (errors.length > 0) {
         return res.status(400).json({ errorsMessages: errors });
     }
 
-    // Обновление данных
-    if (title !== undefined) video.title = title;
-    if (author !== undefined) video.author = author;
-    if (availableResolutions !== undefined) video.availableResolutions = availableResolutions;
-    if (canBeDownloaded !== undefined) video.canBeDownloaded = canBeDownloaded;
-    if (minAgeRestriction !== undefined) video.minAgeRestriction = minAgeRestriction;
-    if (publicationDate !== undefined) video.publicationDate = publicationDate;
+    // Обновляем поля, если они есть
+    if (title !== undefined && typeof title === 'string') {
+        video.title = title;
+    }
+    if (author !== undefined && typeof author === 'string') {
+        video.author = author;
+    }
+    if (availableResolutions !== undefined && Array.isArray(availableResolutions)) {
+        video.availableResolutions = availableResolutions;
+    }
+    if (canBeDownloaded !== undefined && typeof canBeDownloaded === 'boolean') {
+        video.canBeDownloaded = canBeDownloaded;
+    }
+    if (minAgeRestriction !== undefined && typeof minAgeRestriction === 'number') {
+        video.minAgeRestriction = minAgeRestriction;
+    }
+    if (publicationDate !== undefined && typeof publicationDate === 'string') {
+        video.publicationDate = publicationDate;
+    }
+
+    // Обновляем дату публикации
+    video.publicationDate = new Date().toISOString();
 
     res.sendStatus(204);
 });
 
-// Удаление видео по id
+/* --- Удалить видео по id --- */
 app.delete('/videos/:id', (req: Request, res: Response) => {
     const id = +req.params.id;
     const index = videos.findIndex(v => v.id === id);
@@ -117,14 +148,7 @@ app.delete('/videos/:id', (req: Request, res: Response) => {
     }
 });
 
-// Обработка маршрута /testing/all-data (для тестов)
-app.delete('/testing/all-data', (req: Request, res: Response) => {
-    videos = [];
-    currentId = 1;
-    res.sendStatus(204);
-});
-
-// Запуск сервера
+/* --- Запуск сервера --- */
 app.listen(port, () => {
     console.log(`Сервер запущен на порте ${port}`);
 });
