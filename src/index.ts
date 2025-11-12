@@ -1,148 +1,75 @@
 import express, { Request, Response } from 'express';
+import bodyParser from 'body-parser'
+import cors from 'cors'
 
 const app = express();
-app.use(express.json());
 
-let videos: any[] = [];
-let currentId = 1;
-const port = 3000;
+const corsMiddleware = cors();
+app.use(corsMiddleware)
+const jsonBodyMiddleware = bodyParser.json();
+app.use(jsonBodyMiddleware);
 
-app.delete('/testing/all-data', (req, res) => {
-    videos = [];
-    currentId = 1;
-    res.sendStatus(204);
-});
+const port = process.env.PORT || 5000;
 
-app.get('/videos', (req, res) => {
-    res.status(200).json(videos);
-});
+let videos = [
+  { id: 1, title: "Video 1" },
+  { id: 2, title: "Video 2" }, // запятая здесь не обязательна для последнего элемента
+  { id: 3, title: "Video 3" },
+  { id: 4, title: "Video 4" }
+]
 
-app.post('/videos', (req, res) => {
-    const { title, author, availableResolutions, publicationDate } = req.body;
+app.get('/', (req: Request, res: Response) => {
+    res.send('Hello!!!!!5')
+})
 
-    const errors: any[] = [];
+app.get('/videos', (req: Request, res: Response) => {
+    res.send(videos)
+})
 
-    if (typeof title !== 'string' || title.trim() === '') {
-        errors.push({ message: "Title is required", field: "title" });
-    }
-
-    if (typeof author !== 'string' || author.trim() === '') {
-        errors.push({ message: "Author is required", field: "author" });
-    }
-
-    if (!Array.isArray(availableResolutions)) {
-        errors.push({ message: "Available resolutions must be an array", field: "availableResolutions" });
-    }
-
-    if (publicationDate !== undefined && typeof publicationDate !== 'string') {
-        errors.push({ message: "publicationDate must be a string", field: "publicationDate" });
-    }
-
-    if (errors.length > 0) {
-        return res.status(400).json({ errorsMessages: errors });
-    }
-
-    const pubDate = publicationDate !== undefined ? publicationDate : new Date().toISOString();
-
+app.post('/videos', (req: Request, res: Response) => {
     const newVideo = {
-        id: currentId++,
-        title,
-        author,
-        availableResolutions,
-        canBeDownloaded: false,
-        minAgeRestriction: null,
-        publicationDate: pubDate,
-        createdAt: new Date().toISOString()
-    };
+        id: +(new Date()),
+        title: req.body.title,
+        author: 'nikitka'
+    }
+    videos.push(newVideo)
 
-    videos.push(newVideo);
-    res.status(201).json(newVideo);
-});
+    res.status(202).send(newVideo)
+})
 
-app.get('/videos/:id', (req, res) => {
-    const id = +req.params.id;
+app.put('/videos/:videoId', (req: Request, res: Response) => {
+    const id = +req.params.videoId;
     const video = videos.find(v => v.id === id);
-    if (video) {
-        res.status(200).json(video);
+    if(video) {
+        video.title = req.body.title;
+        res.send(video)
     } else {
-        res.sendStatus(404);
+        res.send(404)
     }
-});
+})
 
-app.put('/videos/:id', (req, res) => {
-    const id = +req.params.id;
+app.get('/videos/:videoId', (req: Request, res: Response) => {
+    const id = +req.params.videoId;
     const video = videos.find(v => v.id === id);
-    if (!video) {
-        return res.sendStatus(404);
-    }
-
-    const {
-        title,
-        author,
-        availableResolutions,
-        canBeDownloaded,
-        minAgeRestriction
-        // Оставляем publicationDate без изменений
-    } = req.body;
-
-    const errors: any[] = [];
-
-    if (title !== undefined && typeof title !== 'string') {
-        errors.push({ message: "Title must be a string", field: "title" });
-    }
-
-    if (author !== undefined && typeof author !== 'string') {
-        errors.push({ message: "Author must be a string", field: "author" });
-    }
-
-    if (availableResolutions !== undefined && !Array.isArray(availableResolutions)) {
-        errors.push({ message: "Available resolutions must be an array", field: "availableResolutions" });
-    }
-
-    if (canBeDownloaded !== undefined && typeof canBeDownloaded !== 'boolean') {
-        errors.push({ message: "canBeDownloaded must be a boolean", field: "canBeDownloaded" });
-    }
-
-    if (minAgeRestriction !== undefined && (typeof minAgeRestriction !== 'number' || minAgeRestriction < 1 || minAgeRestriction > 18)) {
-        errors.push({ message: "minAgeRestriction must be a number between 1 and 18", field: "minAgeRestriction" });
-    }
-
-    if (errors.length > 0) {
-        return res.status(400).json({ errorsMessages: errors });
-    }
-
-    // Обновляем только те поля, которые переданы
-    if (title !== undefined) {
-        video.title = title;
-    }
-    if (author !== undefined) {
-        video.author = author;
-    }
-    if (availableResolutions !== undefined) {
-        video.availableResolutions = availableResolutions;
-    }
-    if (canBeDownloaded !== undefined) {
-        video.canBeDownloaded = canBeDownloaded;
-    }
-    if (minAgeRestriction !== undefined) {
-        video.minAgeRestriction = minAgeRestriction;
-    }
-
-    // Не трогаем publicationDate вообще при обновлении
-    res.sendStatus(204);
-});
-
-app.delete('/videos/:id', (req, res) => {
-    const id = +req.params.id;
-    const index = videos.findIndex(v => v.id === id);
-    if (index !== -1) {
-        videos.splice(index, 1);
-        res.sendStatus(204);
+    if(video) {
+        video.title = req.body.title;
+        res.send(video)
     } else {
-        res.sendStatus(404);
+        res.send(404)
     }
-});
+})
+
+app.delete('/videos/:id', (req: Request, res: Response) => {
+    const id = +req.params.id;
+    const newVideos = videos.filter(v => v.id !== id )
+    if ( newVideos.length < videos.length) {
+        videos = newVideos
+        res.send(204)
+    } else {
+        res.send(404)
+    }
+})
 
 app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-});
+    console.log(`Сервер запущен на порте ${port}`)
+})
