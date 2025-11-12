@@ -1,41 +1,39 @@
 import express, { Request, Response } from 'express';
 
 const app = express();
-
 app.use(express.json());
 
 let videos: any[] = [];
 let currentId = 1;
 const port = 3000;
 
-/* --- Очистка всех данных для тестов --- */
-app.delete('/testing/all-data', (req: Request, res: Response) => {
+app.delete('/testing/all-data', (req, res) => {
     videos = [];
     currentId = 1;
     res.sendStatus(204);
 });
 
-/* --- Получить все видео --- */
-app.get('/videos', (req: Request, res: Response) => {
+app.get('/videos', (req, res) => {
     res.status(200).json(videos);
 });
 
-/* --- Создать новое видео --- */
-app.post('/videos', (req: Request, res: Response) => {
+app.post('/videos', (req, res) => {
     const { title, author, availableResolutions, publicationDate } = req.body;
 
-    // Валидация
     const errors: any[] = [];
 
-    if (typeof title !== 'string' || !title.trim()) {
+    if (typeof title !== 'string' || title.trim() === '') {
         errors.push({ message: "Title is required", field: "title" });
     }
-    if (typeof author !== 'string' || !author.trim()) {
+
+    if (typeof author !== 'string' || author.trim() === '') {
         errors.push({ message: "Author is required", field: "author" });
     }
+
     if (!Array.isArray(availableResolutions)) {
         errors.push({ message: "Available resolutions must be an array", field: "availableResolutions" });
     }
+
     if (publicationDate !== undefined && typeof publicationDate !== 'string') {
         errors.push({ message: "publicationDate must be a string", field: "publicationDate" });
     }
@@ -44,7 +42,6 @@ app.post('/videos', (req: Request, res: Response) => {
         return res.status(400).json({ errorsMessages: errors });
     }
 
-    // Установка publicationDate
     const pubDate = publicationDate !== undefined ? publicationDate : new Date().toISOString();
 
     const newVideo = {
@@ -62,8 +59,7 @@ app.post('/videos', (req: Request, res: Response) => {
     res.status(201).json(newVideo);
 });
 
-/* --- Получить видео по id --- */
-app.get('/videos/:id', (req: Request, res: Response) => {
+app.get('/videos/:id', (req, res) => {
     const id = +req.params.id;
     const video = videos.find(v => v.id === id);
     if (video) {
@@ -73,8 +69,7 @@ app.get('/videos/:id', (req: Request, res: Response) => {
     }
 });
 
-/* --- Обновить видео по id --- */
-app.put('/videos/:id', (req: Request, res: Response) => {
+app.put('/videos/:id', (req, res) => {
     const id = +req.params.id;
     const video = videos.find(v => v.id === id);
     if (!video) {
@@ -86,65 +81,58 @@ app.put('/videos/:id', (req: Request, res: Response) => {
         author,
         availableResolutions,
         canBeDownloaded,
-        minAgeRestriction,
-        publicationDate
+        minAgeRestriction
+        // Оставляем publicationDate без изменений
     } = req.body;
 
-    // Валидация
     const errors: any[] = [];
 
     if (title !== undefined && typeof title !== 'string') {
         errors.push({ message: "Title must be a string", field: "title" });
     }
+
     if (author !== undefined && typeof author !== 'string') {
         errors.push({ message: "Author must be a string", field: "author" });
     }
+
     if (availableResolutions !== undefined && !Array.isArray(availableResolutions)) {
         errors.push({ message: "Available resolutions must be an array", field: "availableResolutions" });
     }
+
     if (canBeDownloaded !== undefined && typeof canBeDownloaded !== 'boolean') {
         errors.push({ message: "canBeDownloaded must be a boolean", field: "canBeDownloaded" });
     }
+
     if (minAgeRestriction !== undefined && (typeof minAgeRestriction !== 'number' || minAgeRestriction < 1 || minAgeRestriction > 18)) {
         errors.push({ message: "minAgeRestriction must be a number between 1 and 18", field: "minAgeRestriction" });
-    }
-    if (publicationDate !== undefined && typeof publicationDate !== 'string') {
-        errors.push({ message: "publicationDate must be a string", field: "publicationDate" });
     }
 
     if (errors.length > 0) {
         return res.status(400).json({ errorsMessages: errors });
     }
 
-    // Обновляем поля, если они есть
-    if (title !== undefined && typeof title === 'string') {
+    // Обновляем только те поля, которые переданы
+    if (title !== undefined) {
         video.title = title;
     }
-    if (author !== undefined && typeof author === 'string') {
+    if (author !== undefined) {
         video.author = author;
     }
-    if (availableResolutions !== undefined && Array.isArray(availableResolutions)) {
+    if (availableResolutions !== undefined) {
         video.availableResolutions = availableResolutions;
     }
-    if (canBeDownloaded !== undefined && typeof canBeDownloaded === 'boolean') {
+    if (canBeDownloaded !== undefined) {
         video.canBeDownloaded = canBeDownloaded;
     }
-    if (minAgeRestriction !== undefined && typeof minAgeRestriction === 'number') {
+    if (minAgeRestriction !== undefined) {
         video.minAgeRestriction = minAgeRestriction;
     }
-    if (publicationDate !== undefined && typeof publicationDate === 'string') {
-        // Не меняем publicationDate, чтобы она оставалась постоянной или обновляем по необходимости
-        // В данном случае предполагается, что при обновлении она не меняется, если не передан новый
-        // Поэтому исключаем обновление
-        // или, если хотите разрешить обновление, раскомментируйте строку ниже:
-        // video.publicationDate = publicationDate;
-    }
 
+    // Не трогаем publicationDate вообще при обновлении
     res.sendStatus(204);
 });
 
-/* --- Удалить видео по id --- */
-app.delete('/videos/:id', (req: Request, res: Response) => {
+app.delete('/videos/:id', (req, res) => {
     const id = +req.params.id;
     const index = videos.findIndex(v => v.id === id);
     if (index !== -1) {
@@ -155,7 +143,6 @@ app.delete('/videos/:id', (req: Request, res: Response) => {
     }
 });
 
-/* --- Запуск сервера --- */
 app.listen(port, () => {
-    console.log(`Сервер запущен на порте ${port}`);
+    console.log(`Server running on port ${port}`);
 });
