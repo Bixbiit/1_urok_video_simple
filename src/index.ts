@@ -28,8 +28,42 @@ app.get('/', (req: Request, res: Response) => {
 })
 
 app.get('/videos', (req: Request, res: Response) => {
-    res.status(200).send(videos)
+    const videos = [
+        {
+            id: 1762979584319,
+            title: "some title",
+            author: "nikitka",
+            availableResolutions: ["P144"],
+            canBeDownloaded: false,
+            createdAt: new Date().toISOString(), // например, текущая дата
+            publicationDate: new Date().toISOString(), // например, текущая дата
+            minAgeRestriction: null
+        },
+        {
+            id: 1762979584635,
+            title: "some title",
+            author: "nikitka",
+            availableResolutions: ["P144"],
+            canBeDownloaded: false,
+            createdAt: new Date().toISOString(),
+            publicationDate: new Date().toISOString(),
+            minAgeRestriction: null
+        }
+    ];
+    res.status(200).send(videos);
+});
+
+app.get('/videos/:id', (req: Request, res: Response) => {
+    const id = +req.params.id;
+    const video = videos.find(v => v.id === id);
+    if(video) {
+        video.title = req.body.title;
+        res.send(video)
+    } else {
+        res.send(404)
+    }
 })
+
 
 app.post('/videos', (req: Request, res: Response) => {
     const newVideo = {
