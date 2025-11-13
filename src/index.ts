@@ -48,8 +48,8 @@ app.put('/videos/:videoId', (req: Request, res: Response) => {
     }
 })
 
-app.get('/videos/:videoId', (req: Request, res: Response) => {
-    const id = +req.params.videoId;
+app.get('/videos/:id', (req: Request, res: Response) => {
+    const id = +req.params.id;
     const video = videos.find(v => v.id === id);
     if(video) {
         video.title = req.body.title;
@@ -68,6 +68,11 @@ app.delete('/videos/:id', (req: Request, res: Response) => {
     } else {
         res.send(404)
     }
+})
+
+app.delete('/testing/all-data', (req: Request, res: Response) => {
+let videos = [];
+res.sendStatus(204);
 })
 
 app.listen(port, () => {
