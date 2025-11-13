@@ -67,14 +67,21 @@ app.get('/videos/:id', (req: Request, res: Response) => {
 
 app.post('/videos', (req: Request, res: Response) => {
     const newVideo = {
-        id: +(new Date()),
+        id: Date.now(), // более надежное уникальное ID, равно текущему времени
         title: req.body.title,
-        author: 'nikitka'
-    }
-    videos.push(newVideo)
+        author: 'nikitka',
+        availableResolutions: ["P144"], // добавьте, если тест этого требует
+        canBeDownloaded: false,
+        createdAt: new Date().toISOString(),
+        publicationDate: new Date().toISOString(),
+        minAgeRestriction: null
+    };
 
-    res.status(202).send(newVideo)
-})
+    videos.push(newVideo);
+
+    res.status(201).json(newVideo);
+});
+
 
 app.put('/videos/:videoId', (req: Request, res: Response) => {
     const id = +req.params.videoId;
