@@ -103,7 +103,7 @@ app.delete('/videos/:id', (req: Request, res: Response) => {
     const newVideos = videos.filter(v => v.id !== id )
     if ( newVideos.length < videos.length) {
         videos = newVideos
-        res.send(200)
+        res.send(204)
     } else {
         res.send(404)
     }
