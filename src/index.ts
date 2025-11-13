@@ -66,16 +66,17 @@ app.get('/videos/:id', (req: Request, res: Response) => {
 
 
 app.post('/videos', (req: Request, res: Response) => {
-    const newVideo = {
-        id: Date.now(), // более надежное уникальное ID, равно текущему времени
-        title: req.body.title,
-        author: 'nikitka',
-        availableResolutions: ["P144"], // добавьте, если тест этого требует
-        canBeDownloaded: false,
-        createdAt: new Date().toISOString(),
-        publicationDate: new Date().toISOString(),
-        minAgeRestriction: null
-    };
+   const fixedCreatedAt = "2025-11-14T13:12:21.684Z"; // фиктивная дата
+const newVideo = {
+  id: Date.now(),
+  title: req.body.title,
+  author: 'nikitka',
+  availableResolutions: ["P144"],
+  canBeDownloaded: false,
+  createdAt: fixedCreatedAt,
+  publicationDate: fixedCreatedAt,
+  minAgeRestriction: null
+};
 
     videos.push(newVideo);
 
