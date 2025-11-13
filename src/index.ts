@@ -89,22 +89,21 @@ app.put('/videos/:videoId', (req: Request, res: Response) => {
 })
 
 app.get('/videos/:id', (req: Request, res: Response) => {
-    const id = +req.params.id;
+    const id = +req.params.id; // преобразование строки в число
     const video = videos.find(v => v.id === id);
-    if(video) {
-        video.title = req.body.title;
-        res.send(video)
+    if (video) {
+        res.status(200).json(video);
     } else {
-        res.send(404)
+        res.status(404).send(); // правильный ответ при не найденом видео
     }
-})
+});
 
 app.delete('/videos/:id', (req: Request, res: Response) => {
     const id = +req.params.id;
     const newVideos = videos.filter(v => v.id !== id )
     if ( newVideos.length < videos.length) {
         videos = newVideos
-        res.send(204)
+        res.send(200)
     } else {
         res.send(404)
     }
