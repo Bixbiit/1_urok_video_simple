@@ -65,7 +65,7 @@ app.get('/videos/:id', (req: Request, res: Response) => { // работает
 });
 
 
-app.post('/videos', (req: Request, res: Response) => {
+app.post('/videos', (req: Request, res: Response) => { // менял
     const fixedCreatedAt = "2025-11-15T13:12:21.684Z";
 
     // Объявляем функцию для добавления дней
@@ -99,7 +99,6 @@ app.put('/videos/:videoId', (req: Request, res: Response) => { // менял
     const video = videos.find(v => v.id === id);
     if(video) {
         video.title = req.body.title;
-        res.send(video)
         res.sendStatus(204)
     } else {
         res.sendStatus(404)
@@ -107,12 +106,12 @@ app.put('/videos/:videoId', (req: Request, res: Response) => { // менял
 })
 
 
-app.delete('/videos/:id', (req: Request, res: Response) => {
+app.delete('/videos/:id', (req: Request, res: Response) => { // менял
     const id = +req.params.id;
     const newVideos = videos.filter(v => v.id !== id )
     if ( newVideos.length < videos.length) {
         videos = newVideos
-        res.send(204)
+        res.sendStatus(204)
     } else {
         res.send(404)
     }
