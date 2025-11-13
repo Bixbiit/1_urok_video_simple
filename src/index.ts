@@ -54,19 +54,19 @@ app.get('/videos', (req: Request, res: Response) => {
 });
 
 app.get('/videos/:id', (req: Request, res: Response) => {
-    const id = +req.params.id;
+    const id = +req.params.id; // преобразуем к числу
     const video = videos.find(v => v.id === id);
-    if(video) {
-        video.title = req.body.title;
-        res.send(video)
+    
+    if (video) {
+        res.status(200).json(video);
     } else {
-        res.send(404)
+        res.status(404).send({ error: 'Video not found' });
     }
-})
+});
 
 
 app.post('/videos', (req: Request, res: Response) => {
-   const fixedCreatedAt = "2025-11-14T13:12:21.684Z"; // фиктивная дата
+   const fixedCreatedAt = "2025-11-15T13:12:21.684Z"; // фиктивная дата
 const newVideo = {
   id: Date.now(),
   title: req.body.title,
@@ -96,15 +96,6 @@ app.put('/videos/:videoId', (req: Request, res: Response) => {
     }
 })
 
-app.get('/videos/:id', (req: Request, res: Response) => {
-    const id = +req.params.id; // преобразование строки в число
-    const video = videos.find(v => v.id === id);
-    if (video) {
-        res.status(200).json(video);
-    } else {
-        res.status(404).send(); // правильный ответ при не найденом видео
-    }
-});
 
 app.delete('/videos/:id', (req: Request, res: Response) => {
     const id = +req.params.id;
