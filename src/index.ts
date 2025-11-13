@@ -27,7 +27,7 @@ app.get('/', (req: Request, res: Response) => {
     res.send('Hello!!!!!5')
 })
 
-app.get('/videos', (req: Request, res: Response) => {
+app.get('/videos', (req: Request, res: Response) => { //работает 
     const videos = [
         {
             id: 1762979584319,
@@ -53,7 +53,7 @@ app.get('/videos', (req: Request, res: Response) => {
     res.status(200).send(videos);
 });
 
-app.get('/videos/:id', (req: Request, res: Response) => {
+app.get('/videos/:id', (req: Request, res: Response) => { // работает 
     const id = +req.params.id; // преобразуем к числу
     const video = videos.find(v => v.id === id);
     
@@ -66,31 +66,41 @@ app.get('/videos/:id', (req: Request, res: Response) => {
 
 
 app.post('/videos', (req: Request, res: Response) => {
-   const fixedCreatedAt = "2025-11-15T13:12:21.684Z"; // фиктивная дата
-const newVideo = {
-  id: Date.now(),
-  title: req.body.title,
-  author: 'nikitka',
-  availableResolutions: ["P144"],
-  canBeDownloaded: false,
-  createdAt: fixedCreatedAt,
-  publicationDate: fixedCreatedAt,
-  minAgeRestriction: null
-};
+    const fixedCreatedAt = "2025-11-15T13:12:21.684Z";
+
+    // Объявляем функцию для добавления дней
+    function addDays(dateString: string, days: number): string {
+        const date = new Date(dateString);
+        date.setDate(date.getDate() + days);
+        return date.toISOString();
+    }
+
+    const createdAt = fixedCreatedAt; // или взять из тела запроса, если есть
+    const publicationDate = addDays(createdAt, 1); // +1 день
+
+    const newVideo = {
+        id: Date.now(),
+        title: req.body.title,
+        author: 'nikitka',
+        availableResolutions: ["P144"],
+        canBeDownloaded: false,
+        createdAt: createdAt,
+        publicationDate: publicationDate,
+        minAgeRestriction: null
+    };
 
     videos.push(newVideo);
-
     res.status(201).json(newVideo);
 });
 
 
-app.put('/videos/:videoId', (req: Request, res: Response) => {
+app.put('/videos/:videoId', (req: Request, res: Response) => { // менял
     const id = +req.params.videoId;
     const video = videos.find(v => v.id === id);
     if(video) {
         video.title = req.body.title;
         res.send(video)
-        res.sendStatus(200)
+        res.sendStatus(204)
     } else {
         res.sendStatus(404)
     }
